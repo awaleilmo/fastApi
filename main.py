@@ -1,46 +1,39 @@
 from typing import Optional
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from pydantic import BaseModel
-from random import randrange
+import uvicorn
 
 
 app = FastAPI()
 
-class Post(BaseModel):
+@app.get("/blog")
+def index(limit = 10, published: bool = True, sort: Optional[str] = None):
+    if published:
+        return {"data": f'{limit} published blogs from the database'}
+    else:
+        return {"data": f'{limit} blogs from the database'}
+
+@app.get('/blog/unpublished')
+def unpublished():
+    return {"data": "all unpublished data"}
+
+@app.get('/blog/{id}')
+def show(id: int):
+    return {"data": id}
+
+@app.get('/blog/{id}/comments')
+def comments(id, limit = 10):
+    return {"data": {"1", "2"}}
+
+class Blog(BaseModel):
     title: str
-    content: str
-    published: bool = True
-    rating: Optional[int] = None
-    
-my_post = []
+    body: str
+    published: Optional[bool]
 
-def find_post(id):
-    for p in my_post:
-        if p["id"] == id:
-            return p
+@app.post('/blog')
+def create_blog(request: Blog):
+    return {"data": f'Blog is created with title as {request.title}'}
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@app.get("/posts")
-async def get_posts():
-    return {"data": my_post}
-
-@app.post("/createposts")
-async def create_posts(data: Post):
-    post_dump = data.model_dump()
-    post_dump["id"] = randrange(0, 1000000)
-    my_post.append(post_dump)
-    return {
-        "message": "Post has been created",
-        "data": data
-        }
-
-@app.get("/posts/{id}")
-async def get_post(id: int, response: Response):
-    post = find_post(id)
-    if not post:
-        response.status_code = 404
-    return {"data": find_post(id)}
+# if __name__ == '__main__':
+#     uvicorn.run(app, host='127.0.0.1', port=9000)
